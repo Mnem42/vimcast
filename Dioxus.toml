@@ -1,0 +1,32 @@
+[application]
+asset_dir = "assets"
+
+[web.app]
+
+# HTML title tag content
+title = "vimcast"
+
+# include `assets` in web platform
+[web.resource]
+
+# Additional CSS style files
+style = []
+
+# Additional JavaScript files
+script = []
+
+[web.resource.dev]
+
+# Javascript code file
+# serve: [dev-server] only
+script = []
+
+[bundle]
+identifier = "com.vimcast-2907.com"
+publisher = "Umang Surana"
+icon = ["assets/icon.icns"]
+
+[bundle.macos]
+files = {}
+hardened_runtime = true
+entitlements = "entitlements.plist"
