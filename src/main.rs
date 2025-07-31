@@ -6,44 +6,26 @@ use crate::loader::launch;
 use crate::loader::{apps_json_path, update_apps_json_with_installed_apps};
 use crate::search::RadixNode;
 
+use dioxus::desktop::tao::platform::macos::WindowExtMacOS;
 use dioxus::desktop::tao::{
-    dpi::LogicalPosition,
-    event_loop::{EventLoop, EventLoopBuilder},
+    event_loop::EventLoopBuilder,
     platform::macos::{ActivationPolicy, EventLoopExtMacOS, WindowBuilderExtMacOS},
-    window::Window,
 };
 use dioxus::desktop::{use_global_shortcut, window, Config, WindowBuilder};
 use dioxus::prelude::*;
 
 const MAIN_CSS: Asset = asset!("/assets/main.css");
 
-#[allow(unused)]
-fn move_window_to_monitor(window: &Window, event_loop: &EventLoop<()>, monitor_index: usize) {
-    let monitors: Vec<_> = event_loop.available_monitors().collect();
-
-    if let Some(monitor) = monitors.get(monitor_index) {
-        let position = monitor.position(); // PhysicalPosition<i32>
-        let scale_factor = window.scale_factor();
-
-        // Convert to logical position based on window's scale factor
-        let logical_position: LogicalPosition<f64> = position.to_logical(scale_factor);
-        window.set_outer_position(logical_position);
-    } else {
-        eprintln!("Monitor index {} not found!", monitor_index);
-    }
-}
-
 fn init_window() -> WindowBuilder {
-    WindowBuilder::new()
+    dioxus::desktop::tao::window::WindowBuilder::new()
         .with_resizable(false)
         .with_transparent(true)
         .with_decorations(false)
         .with_always_on_top(true)
-        .with_movable_by_window_background(false)
-        .with_visible_on_all_workspaces(true)
         .with_has_shadow(false)
-        .with_content_protection(false)
+        .with_content_protection(true)
 }
+
 fn main() {
     if let Err(e) = config::initialize_config() {
         eprintln!("⚠️ failed to initialize config: {e}");
@@ -54,28 +36,50 @@ fn main() {
     }
 
     let mut event_loop = EventLoopBuilder::with_user_event().build();
-
     event_loop.set_activation_policy(ActivationPolicy::Accessory);
 
-    let window = init_window();
-
-    let monitor = window
-        .clone()
-        .build(&event_loop)
-        .expect("Error getting monitor");
-
-    let mon = monitor.current_monitor();
-
-    println!("Monitor ID: {:#?}", monitor.id());
-
+    let window_ = init_window();
     LaunchBuilder::new()
         .with_cfg(
             Config::new()
-                .with_window(window.with_position(mon.as_ref().unwrap().position()))
+                .with_window(window_)
                 .with_event_loop(event_loop)
                 .with_disable_context_menu(true),
         )
         .launch(App);
+
+    let main_window = window();
+
+    #[cfg(target_os = "macos")]
+    use cocoa::appkit::{NSMainMenuWindowLevel, NSWindow, NSWindowCollectionBehavior};
+    use cocoa::base::id;
+    let ns_win = main_window.ns_window() as id;
+    unsafe {
+        ns_win.setLevel_(((NSMainMenuWindowLevel + 1) as u64).try_into().unwrap());
+        ns_win.setCollectionBehavior_(
+            NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces,
+        );
+        //        ns_win.setCollectionBehavior_(
+        //            NSWindowCollectionBehavior::NSWindowCollectionBehaviorMoveToActiveSpace,
+        //        );
+    }
+
+    if let Some(monitor) = main_window.current_monitor() {
+        let monitor_size = monitor.size(); // LogicalSize
+        let monitor_position = monitor.position(); // LogicalPosition
+
+        let window_size = main_window.outer_size(); // PhysicalSize
+
+        // Convert everything to physical coordinates
+        let center_x = monitor_position.x
+            + ((monitor_size.width as f64 - window_size.width as f64) / 2.0) as i32;
+        let center_y = monitor_position.y
+            + ((monitor_size.height as f64 - window_size.height as f64) / 2.0) as i32;
+
+        main_window.set_outer_position(dioxus::desktop::tao::dpi::PhysicalPosition::new(
+            center_x, center_y,
+        ));
+    }
 }
 
 #[component]
@@ -86,17 +90,52 @@ fn App() -> Element {
 
     let mut input_value = use_signal(|| String::new());
 
+    let main_window = window();
+
+    #[cfg(target_os = "macos")]
+    use cocoa::appkit::{NSMainMenuWindowLevel, NSWindow, NSWindowCollectionBehavior};
+    use cocoa::base::id;
+    let ns_win = main_window.ns_window() as id;
+    unsafe {
+        ns_win.setLevel_(((NSMainMenuWindowLevel + 1) as u64).try_into().unwrap());
+        ns_win.setCollectionBehavior_(
+            NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces,
+        );
+        //        ns_win.setCollectionBehavior_(
+        //            NSWindowCollectionBehavior::NSWindowCollectionBehaviorMoveToActiveSpace,
+        //        );
+    }
+
     _ = use_global_shortcut("cmd+g", move || {
         visibility.set(visibility() + 1);
-        if visibility() % 2 == 0 {
-            let visibility = window().is_visible();
 
-            if !visibility {
-                window().set_focus();
+        if visibility() % 2 == 0 {
+            let window = window();
+            let is_visible = window.is_visible();
+
+            if !is_visible {
+                window.set_focus();
             }
 
-            window().set_visible(!visibility);
-            window().set_outer_position(window().current_monitor().unwrap().position());
+            // Get monitor and its dimensions
+            if let Some(monitor) = window.current_monitor() {
+                let monitor_size = monitor.size(); // LogicalSize
+                let monitor_position = monitor.position(); // LogicalPosition
+
+                let window_size = window.outer_size(); // PhysicalSize
+
+                // Convert everything to physical coordinates
+                let center_x = monitor_position.x
+                    + ((monitor_size.width as f64 - window_size.width as f64) / 2.0) as i32;
+                let center_y = monitor_position.y
+                    + ((monitor_size.height as f64 - window_size.height as f64) / 2.0) as i32;
+
+                window.set_outer_position(dioxus::desktop::tao::dpi::PhysicalPosition::new(
+                    center_x, center_y,
+                ));
+            }
+
+            window.set_visible(!is_visible);
         }
     });
 
@@ -111,7 +150,7 @@ fn App() -> Element {
                 placeholder: "Search for apps and commands",
                 value: "{input_value}",
                 oninput: move |event| input_value.set(event.value()),
-
+            
 
             }
             SResults { query: input_value(), db }
