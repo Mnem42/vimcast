@@ -1,6 +1,5 @@
 mod config;
 mod loader;
-mod screenshot;
 mod search;
 
 //use crate::screenshot::take_screenshot;
@@ -15,8 +14,8 @@ use dioxus::desktop::tao::{
 };
 use dioxus::desktop::trayicon::menu::{Menu, MenuItem};
 use dioxus::desktop::trayicon::{Icon, TrayIconBuilder};
-use dioxus::desktop::{use_tray_menu_event_handler, Config};
 use dioxus::desktop::{use_global_shortcut, window, WindowBuilder};
+use dioxus::desktop::{use_tray_menu_event_handler, Config};
 use dioxus::prelude::*;
 
 const MAIN_CSS: Asset = asset!("/assets/main.css");
@@ -49,7 +48,7 @@ fn main() {
             Config::new()
                 .with_window(window_)
                 .with_event_loop(event_loop)
-                .with_disable_context_menu(true)
+                .with_disable_context_menu(true),
         )
         .launch(App);
 
@@ -101,7 +100,7 @@ fn load_icon(bytes: &[u8]) -> Icon {
 fn App() -> Element {
     let menu = Menu::new();
     let quit_item = MenuItem::with_id("quit", "Quit", true, None);
-    
+
     let icon = load_icon(include_bytes!("../assets/icon.png"));
 
     menu.append(&quit_item).unwrap();
@@ -115,15 +114,15 @@ fn App() -> Element {
     provide_context(builder.build().expect("tray icon builder failed"));
 
     use_tray_menu_event_handler(move |event| {
-            // Potentially there is a better way to do this.
-            // The `0` is the id of the menu item
-            match event.id.0.as_str() {
-                "quit" => {
-                    std::process::exit(0);
-                }
-                _ => {}
+        // Potentially there is a better way to do this.
+        // The `0` is the id of the menu item
+        match event.id.0.as_str() {
+            "quit" => {
+                std::process::exit(0);
             }
-        });
+            _ => {}
+        }
+    });
 
     let mut visibility = use_signal(|| 0);
     let mut db = RadixNode::new();
