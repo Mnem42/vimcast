@@ -1,7 +1,9 @@
 mod config;
 mod loader;
+mod screenshot;
 mod search;
 
+//use crate::screenshot::take_screenshot;
 use crate::loader::launch;
 use crate::loader::{apps_json_path, update_apps_json_with_installed_apps};
 use crate::search::RadixNode;
@@ -11,7 +13,10 @@ use dioxus::desktop::tao::{
     event_loop::EventLoopBuilder,
     platform::macos::{ActivationPolicy, EventLoopExtMacOS, WindowBuilderExtMacOS},
 };
-use dioxus::desktop::{use_global_shortcut, window, Config, WindowBuilder};
+use dioxus::desktop::trayicon::menu::{Menu, MenuItem};
+use dioxus::desktop::trayicon::{Icon, TrayIconBuilder};
+use dioxus::desktop::{use_tray_menu_event_handler, Config};
+use dioxus::desktop::{use_global_shortcut, window, WindowBuilder};
 use dioxus::prelude::*;
 
 const MAIN_CSS: Asset = asset!("/assets/main.css");
@@ -44,7 +49,7 @@ fn main() {
             Config::new()
                 .with_window(window_)
                 .with_event_loop(event_loop)
-                .with_disable_context_menu(true),
+                .with_disable_context_menu(true)
         )
         .launch(App);
 
@@ -82,8 +87,44 @@ fn main() {
     }
 }
 
+fn load_icon(bytes: &[u8]) -> Icon {
+    let image = image::load_from_memory(bytes).expect("Invalid image format");
+    let image = image.into_rgba8(); // Convert to RGBA8 format
+
+    let (width, height) = image.dimensions();
+    let rgba = image.into_raw(); // Raw RGBA bytes
+
+    Icon::from_rgba(rgba, width, height).expect("Failed to create Icon")
+}
+
 #[component]
 fn App() -> Element {
+    let menu = Menu::new();
+    let quit_item = MenuItem::with_id("quit", "Quit", true, None);
+    
+    let icon = load_icon(include_bytes!("../assets/icon.png"));
+
+    menu.append(&quit_item).unwrap();
+
+    // Create tray icon
+    let builder = TrayIconBuilder::new()
+        .with_menu(Box::new(menu))
+        .with_tooltip("Onecast")
+        .with_icon(icon);
+
+    provide_context(builder.build().expect("tray icon builder failed"));
+
+    use_tray_menu_event_handler(move |event| {
+            // Potentially there is a better way to do this.
+            // The `0` is the id of the menu item
+            match event.id.0.as_str() {
+                "quit" => {
+                    std::process::exit(0);
+                }
+                _ => {}
+            }
+        });
+
     let mut visibility = use_signal(|| 0);
     let mut db = RadixNode::new();
     crate::loader::load(&mut db);
@@ -150,7 +191,7 @@ fn App() -> Element {
                 placeholder: "Search for apps and commands",
                 value: "{input_value}",
                 oninput: move |event| input_value.set(event.value()),
-            
+
 
             }
             SResults { query: input_value(), db }
