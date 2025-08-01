@@ -1,67 +1,84 @@
 * {
   box-sizing: border-box;
-  color: white;
-  font-family: 'JetBrainsMono Nerd Font', Arial, Helvetica, sans-serif;
-  border-radius: 20px;
+  color: lightgrey;
+  font-family: 'SF Pro Text', 'JetBrainsMono Nerd Font', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: transparent;
 }
 
 #container {
-  background-color: black;
+  background-color: rgba(22, 22, 22, 0.85);
+  backdrop-filter: blur(16px);
+  border-radius: 12px;
+  width: 600px;
+  max-width: 90vw;
+  margin: auto;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 10px;
+  gap: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
 }
 
 #main-input {
-  margin: 10px;
-  background-color: transparent;
-  color: #d19a5c;
-  border: 1px solid #d19a5c;
-  height: 40px;
-  width: 95%;
-  font-size: 20px;
-  padding: 5px 10px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: none;
+  color: #ffffff;
+  font-size: 18px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  width: 100%;
 }
 
 #main-input::placeholder {
-  color: white;
-  opacity: 0.2;
+  color: #aaa;
+  opacity: 0.6;
 }
 
 #main-input:focus {
   outline: none;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 #results-container {
-  width: 100%;
-  margin-top: 10px;
   display: flex;
   flex-direction: column;
-  gap: 5px; 
+  gap: 8px;
 }
 
+/* Treat .command-div as real buttons */
 .command-div {
-  all: unset;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background-color: #2a2a2a;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  background-color: rgba(255, 255, 255, 0.04);
+  border: none;
+  border-radius: 6px;
+  padding: 10px 14px;
   font-size: 16px;
-  line-height: 1.4;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.15s ease;
 }
 
 .command-div:hover {
-  background-color: #333;
-  transform: scale(1.01);
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .command-div:active {
-  background-color: #444;
-  transform: scale(0.98);
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.command-div:focus {
+  outline: 2px solid #3a3a3a;
+  outline-offset: 2px;
+}
+
+/* Optional: visual highlight for arrow-key selected item */
+.command-div.selected {
+  background-color: rgba(255, 255, 255, 0.16);
 }
