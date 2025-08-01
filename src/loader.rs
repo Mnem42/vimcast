@@ -128,7 +128,7 @@ pub fn update_apps_json_with_installed_apps() {
                     if path.extension().map(|ext| ext == "exe").unwrap_or(false) {
                         if let Some(name) = path.file_stem().and_then(|n| n.to_str()) {
                             let exists = apps.iter().any(|a| a.name.eq_ignore_ascii_case(name));
-                            if !exists {
+                            if !exists && name.to_string().to_lowercase().contains("uninstall"){
                                 apps.push(App {
                                     name: name.to_string(),
                                     command: format!("Start-Process \"{}\"", path.display()),
