@@ -23,6 +23,7 @@ use dioxus::desktop::trayicon::{Icon, TrayIconBuilder};
 use dioxus::desktop::{tao, use_global_shortcut, window, DesktopService, WindowBuilder};
 use dioxus::desktop::{use_tray_menu_event_handler, Config};
 use dioxus::desktop::tao::event_loop::EventLoopBuilder;
+use dioxus::logger::tracing::{info, Level};
 use dioxus::prelude::*;
 use image::Rgba;
 
@@ -53,6 +54,9 @@ fn macos_window_config(main_window: &Rc<DesktopService>) {
 }
 
 fn main() {
+    dioxus::logger::init(Level::INFO).expect("logger failed to init");
+    info!("Inited");
+
     if let Err(e) = config::initialize_config() {
         eprintln!("⚠️ failed to initialize config: {e}");
     }

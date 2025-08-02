@@ -5,17 +5,18 @@ use std::path::PathBuf;
 use dioxus::desktop::tao::rwh_05::RawWindowHandle::Win32;
 use crate::search::RadixNode;
 use anyhow::{anyhow, Result};
+use crate::os_specific::search_app_dirs;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub(crate) struct App {
-    name: String,
+    path: PathBuf,
     command: String,
 }
 
 impl App{
-    pub fn new(name: &str, command: &str) -> Self{
+    pub fn new(path: PathBuf, command: &str) -> Self{
         Self {
-            name: name.to_string(),
+            path: path,
             command: command.to_string(),
         }
     }
@@ -50,7 +51,7 @@ pub fn load(db: &mut RadixNode) {
     };
 
     for app in apps {
-        db.insert(&app.name);
+        db.insert(&app.path.to_str().unwrap());
     }
 }
 
@@ -72,7 +73,7 @@ pub fn launch(app_name: String) {
         }
     };
 
-    if let Some(app) = apps.iter().find(|a| a.name.eq_ignore_ascii_case(&app_name)) {
+    if let Some(app) = apps.iter().find(|a| a.path.clone().to_str().unwrap().eq_ignore_ascii_case(&app_name)) {
         if let Err(err) = std::process::Command::new("sh")
             .arg("-c")
             .arg(&app.command)
