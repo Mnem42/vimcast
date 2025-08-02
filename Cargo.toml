@@ -9,22 +9,25 @@ edition = "2021"
 [dependencies]
 dioxus = { version = "0.6.0", features = ["desktop"] }
 objc = "0.2"
-cocoa = "0.24"
 async-std = "1.13.1"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.141"
 dirs = "6.0.0"
-core-graphics = "0.25.0"
-objc2 = "0.6.1"
-objc2-foundation = "0.3.1"
-objc2-app-kit = "0.3.1"
 image = "0.25.6"
+anyhow = "1.0.98"
+lnk = "0.6.1"
 
 [features]
 default = ["desktop"]
 web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
+
+[target.'cfg(target_os = "macos")'.dependencies]
+cocoa = "0.26.1"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+lnk = "0.6.1"
 
 [profile]
 

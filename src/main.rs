@@ -1,25 +1,30 @@
 mod config;
 mod loader;
 mod search;
+mod os_specific;
 
 use std::process::exit;
 use std::rc::Rc;
+
 
 //use crate::screenshot::take_screenshot;
 use crate::loader::launch;
 use crate::loader::{apps_json_path, update_apps_json_with_installed_apps};
 use crate::search::RadixNode;
 
+#[cfg(target_os = "macos")]
 use dioxus::desktop::tao::platform::macos::WindowExtMacOS;
+#[cfg(target_os = "macos")]
 use dioxus::desktop::tao::{
-    event_loop::EventLoopBuilder,
     platform::macos::{ActivationPolicy, EventLoopExtMacOS, WindowBuilderExtMacOS},
 };
 use dioxus::desktop::trayicon::menu::{Menu, MenuItem};
 use dioxus::desktop::trayicon::{Icon, TrayIconBuilder};
-use dioxus::desktop::{use_global_shortcut, window, DesktopService, WindowBuilder};
+use dioxus::desktop::{tao, use_global_shortcut, window, DesktopService, WindowBuilder};
 use dioxus::desktop::{use_tray_menu_event_handler, Config};
+use dioxus::desktop::tao::event_loop::EventLoopBuilder;
 use dioxus::prelude::*;
+use image::Rgba;
 
 const MAIN_CSS: Asset = asset!("/assets/main.css");
 
@@ -28,13 +33,13 @@ fn init_window() -> WindowBuilder {
         .with_resizable(false)
         .with_transparent(true)
         .with_decorations(false)
+        .with_background_color((0,0,0,0))
         .with_always_on_top(true)
-        .with_has_shadow(false)
         .with_content_protection(true)
 }
 
+#[cfg(target_os = "macos")]
 fn macos_window_config(main_window: &Rc<DesktopService>) {
-    #[cfg(target_os = "macos")]
     use cocoa::appkit::{NSMainMenuWindowLevel, NSWindow, NSWindowCollectionBehavior};
     use cocoa::base::id;
     let ns_win = main_window.ns_window() as id;
@@ -57,6 +62,8 @@ fn main() {
     }
 
     let mut event_loop = EventLoopBuilder::with_user_event().build();
+
+    #[cfg(target_os = "macos")]
     event_loop.set_activation_policy(ActivationPolicy::Accessory);
 
     let window_ = init_window();
@@ -126,6 +133,7 @@ fn App() -> Element {
 
     provide_context(builder.build().expect("tray icon builder failed"));
 
+    #[cfg(target_os = "macos")]
     macos_window_config(&window());
 
 
@@ -218,7 +226,7 @@ fn SResults(query: Signal<String>, db: RadixNode) -> Element {
     let searchresults = if db.starts_with(&query().trim()) && !query().is_empty() {
         db.collect(&query().to_lowercase().trim().trim_start())
     } else {
-        vec![]
+        vec!["test".to_string()]
     };
 
     let render_commands = searchresults.into_iter().map(|command| {

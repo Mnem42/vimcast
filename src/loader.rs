@@ -2,13 +2,23 @@ use serde::{Deserialize, Serialize};
 use std::fs::{self, File};
 use std::io::BufWriter;
 use std::path::PathBuf;
-
+use dioxus::desktop::tao::rwh_05::RawWindowHandle::Win32;
 use crate::search::RadixNode;
+use anyhow::{anyhow, Result};
 
 #[derive(Debug, Deserialize, Serialize)]
-struct App {
+pub(crate) struct App {
     name: String,
     command: String,
+}
+
+impl App{
+    pub fn new(name: &str, command: &str) -> Self{
+        Self {
+            name: name.to_string(),
+            command: command.to_string(),
+        }
+    }
 }
 
 fn config_path() -> PathBuf {
@@ -84,62 +94,7 @@ pub fn update_apps_json_with_installed_apps() {
         return;
     }
 
-    let mut apps: Vec<App> = match fs::read_to_string(&path) {
-        Ok(data) => serde_json::from_str(&data).unwrap_or_else(|_| vec![]),
-        Err(_) => vec![],
-    };
-
-    #[cfg(target_os = "macos")]
-    let app_dirs: Vec<PathBuf> = vec![
-        PathBuf::from("/Applications"),
-        dirs::home_dir().unwrap_or_default().join("Applications"),
-    ];
-
-    #[cfg(target_os = "windows")]
-    let app_dirs: Vec<PathBuf> = vec![
-        PathBuf::from("C:\\Program Files"),
-        PathBuf::from("C:\\Program Files (x86)"),
-        dirs::desktop_dir().unwrap_or_default(),
-        dirs::document_dir().unwrap_or_default(),
-    ];
-
-    for dir in app_dirs {
-        if let Ok(entries) = fs::read_dir(dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-
-                #[cfg(target_os = "macos")]
-                {
-                    if path.extension().map(|ext| ext == "app").unwrap_or(false) {
-                        if let Some(name) = path.file_stem().and_then(|n| n.to_str()) {
-                            let exists = apps.iter().any(|a| a.name.eq_ignore_ascii_case(name));
-                            if !exists {
-                                apps.push(App {
-                                    name: name.to_string(),
-                                    command: format!("open -a \"{}\"", name),
-                                });
-                            }
-                        }
-                    }
-                }
-
-                #[cfg(target_os = "windows")]
-                {
-                    if path.extension().map(|ext| ext == "exe").unwrap_or(false) {
-                        if let Some(name) = path.file_stem().and_then(|n| n.to_str()) {
-                            let exists = apps.iter().any(|a| a.name.eq_ignore_ascii_case(name));
-                            if !exists && name.to_string().to_lowercase().contains("uninstall"){
-                                apps.push(App {
-                                    name: name.to_string(),
-                                    command: format!("Start-Process \"{}\"", path.display()),
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    let apps = search_app_dirs().unwrap();
 
     match File::create(&path) {
         Ok(file) => {
