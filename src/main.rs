@@ -23,7 +23,7 @@ use dioxus::desktop::trayicon::{Icon, TrayIconBuilder};
 use dioxus::desktop::{tao, use_global_shortcut, window, DesktopService, WindowBuilder};
 use dioxus::desktop::{use_tray_menu_event_handler, Config};
 use dioxus::desktop::tao::event_loop::EventLoopBuilder;
-use dioxus::logger::tracing::{info, Level};
+use dioxus::logger::tracing::{debug, info, Level};
 use dioxus::prelude::*;
 use image::Rgba;
 use crate::window::reposition_window;
@@ -211,6 +211,7 @@ fn SResults(query: Signal<String>, db: RadixNode) -> Element {
                     launch(command_clone.clone()).expect("Failed to launch app");
                     query.set("".to_string());
                     window().set_visible(false);
+                    debug!("Hidden screen")
                 },
                 class: "command-div",
                 "{command_clone}"

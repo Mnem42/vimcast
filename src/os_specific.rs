@@ -89,14 +89,17 @@ fn resolve_shortcut(path: &str) -> Result<Option<String>>{
 #[cfg(target_os = "windows")]
 pub(crate) fn run_executable(path: PathBuf) -> Result<()> {
     debug!("Path provided:      {:?}", path);
-    debug!("Argument provided:  {}", format!("\"{}\"",path.file_stem().unwrap().to_str().unwrap()));
-    debug!("Directory searched: {}", format!("\"{}\"",path.file_stem().unwrap().to_str().unwrap()));
+    debug!("Argument provided:  {}", format!("\"{}\"",path.parent().unwrap().to_str().unwrap()));
+    debug!("Directory searched: {}", format!("{}",path.file_name().unwrap().to_str().unwrap()));
 
     // Use expect if .to_str() fails, because it's an exceptional case, and
     // it should be physically impossible for .file_name() to error
-    Command::new("start")
-        .args(["/D",&format!("\"{}\"",path.parent().unwrap().to_str().unwrap())])
-        .arg(format!("\"{}\"",path.file_stem().unwrap().to_str().unwrap()))
+    Command::new("cmd")
+        .arg("/C")
+        .arg("start")
+        .arg("/D")
+        .arg(format!("{}",path.parent().unwrap().to_str().unwrap()))
+        .arg(format!("{}",path.file_name().unwrap().to_str().unwrap()))
         .spawn()?;
 
     Ok(())
