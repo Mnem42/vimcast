@@ -202,7 +202,7 @@ fn SResults(query: Signal<String>, db: RadixNode) -> Element {
     let searchresults = if db.starts_with(&query().trim()) && !query().is_empty() {
         db.collect(&query().to_lowercase().trim().trim_start())
     } else {
-        vec!["test".to_string()]
+        vec![]
     };
 
     let render_commands = searchresults.into_iter().map(|command| {
