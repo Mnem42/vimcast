@@ -1,10 +1,15 @@
-use std::ffi::OsStr;
+use std::ffi::{c_void, OsStr};
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
+use std::ptr::null;
 use anyhow::{anyhow, Result};
 use dioxus::logger::tracing::{debug, info, trace};
 use lnk::encoding::WINDOWS_1252;
+use windows_sys::core::{PCSTR, PSTR};
+use windows_sys::Win32::Foundation::{GetLastError, FALSE};
+use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
+use windows_sys::Win32::System::Threading::{CreateProcessA, PROCESS_CREATION_FLAGS, PROCESS_INFORMATION, STARTUPINFOA};
 use crate::loader::App;
 
 /// The place start menu shortcuts are stored (on windows)
@@ -78,9 +83,20 @@ fn resolve_shortcut(path: &str) -> Result<Option<String>>{
     Ok(link.link_target())
 }
 
+/// Run an executable
+/// 
+/// TODO: MAKE THIS SHIT WORK
 #[cfg(target_os = "windows")]
-pub(crate) fn run_executable(path: PathBuf) -> Result<()>{
-    Command::new(path.to_str().unwrap())
+pub(crate) fn run_executable(path: PathBuf) -> Result<()> {
+    debug!("Path provided:      {:?}", path);
+    debug!("Argument provided:  {}", format!("\"{}\"",path.file_stem().unwrap().to_str().unwrap()));
+    debug!("Directory searched: {}", format!("\"{}\"",path.file_stem().unwrap().to_str().unwrap()));
+
+    // Use expect if .to_str() fails, because it's an exceptional case, and
+    // it should be physically impossible for .file_name() to error
+    Command::new("start")
+        .args(["/D",&format!("\"{}\"",path.parent().unwrap().to_str().unwrap())])
+        .arg(format!("\"{}\"",path.file_stem().unwrap().to_str().unwrap()))
         .spawn()?;
 
     Ok(())

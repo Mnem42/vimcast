@@ -38,7 +38,6 @@ fn init_window() -> WindowBuilder {
         .with_decorations(false)
         .with_background_color((0,0,0,0))
         .with_always_on_top(true)
-        //.with_content_protection(true)
 }
 
 #[cfg(target_os = "macos")]
@@ -56,7 +55,7 @@ fn macos_window_config(main_window: &Rc<DesktopService>) {
 }
 
 fn main() {
-    dioxus::logger::init(Level::INFO).expect("logger failed to init");
+    dioxus::logger::init(Level::DEBUG).expect("logger failed to init");
     info!("Inited");
 
     if let Err(e) = config::initialize_config() {
@@ -159,7 +158,7 @@ fn App() -> Element {
                 window.set_focus();
             }
 
-            reposition_window(&window);
+            // reposition_window(&window);
 
             window.set_visible(!is_visible);
         }

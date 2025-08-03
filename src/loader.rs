@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use dioxus::desktop::tao::rwh_05::RawWindowHandle::Win32;
 use crate::search::RadixNode;
 use anyhow::{anyhow, Error, Result};
+use dioxus::logger::tracing::debug;
 use crate::os_specific::{run_executable, search_app_dirs};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -59,11 +60,13 @@ pub fn load(db: &mut RadixNode) {
     };
 
     for app in apps {
-        db.insert(&app.path.to_str().unwrap());
+        db.insert(&app.name.to_str().unwrap());
     }
 }
 
 pub fn launch(app_name: String) -> Result<()> {
+    debug!("App name to launch: {}", app_name);
+
     let path = apps_json_path();
     let data = match fs::read_to_string(&path) {
         Ok(data) => data,
@@ -81,8 +84,10 @@ pub fn launch(app_name: String) -> Result<()> {
         }
     };
 
-    if let Some(app) = apps.iter().find(|a| a.path.clone().to_str().unwrap().eq_ignore_ascii_case(&app_name)) {
-        Ok(run_executable(path)?)
+    if let Some(app) = apps.iter().find(|a| a.name.clone().to_str().unwrap().eq_ignore_ascii_case(&app_name)) {
+        debug!("App to be run: {:#?}", app);
+        run_executable(app.path.to_path_buf())?;
+        Ok(())
     } else {
         Err(anyhow!("App '{}' not found in apps.json", app_name))
     }

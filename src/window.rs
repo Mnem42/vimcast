@@ -1,4 +1,5 @@
 use dioxus::desktop::DesktopContext;
+use dioxus::desktop::tao::dpi::PhysicalPosition;
 
 pub(crate) fn reposition_window(window: &DesktopContext){
     if let Some(monitor) = window.current_monitor() {
@@ -12,8 +13,6 @@ pub(crate) fn reposition_window(window: &DesktopContext){
         let center_y = monitor_position.y
             + ((monitor_size.height as f64 - window_size.height as f64) / 2.0) as i32;
 
-        window.set_outer_position(dioxus::desktop::tao::dpi::PhysicalPosition::new(
-            center_x, center_y,
-        ));
+       window.set_outer_position(PhysicalPosition::new(center_x, 0));
     }
 }
