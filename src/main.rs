@@ -62,7 +62,7 @@ fn main() {
     }
 
     // Run it in its own thread
-    thread::spawn(config::try_update_apps_json());
+    thread::spawn(config::try_update_apps_json);
 
     let event_loop = EventLoopBuilder::with_user_event().build();
 
