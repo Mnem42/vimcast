@@ -5,7 +5,7 @@ mod os_specific;
 mod window;
 
 use std::process::exit;
-use anyhow::Result;
+use std::rc::Rc;
 
 
 //use crate::screenshot::take_screenshot;
@@ -198,7 +198,7 @@ fn App() -> Element {
 }
 
 #[component]
-fn SResults(query: Signal<String>, db: RadixNode) -> Result<Element> {
+fn SResults(query: Signal<String>, db: RadixNode) -> Element {
     let searchresults = if db.starts_with(&query().trim()) && !query().is_empty() {
         db.collect(&query().to_lowercase().trim().trim_start())
     } else {
@@ -211,7 +211,7 @@ fn SResults(query: Signal<String>, db: RadixNode) -> Result<Element> {
             button {
                 autofocus: true,
                 onclick: move |_| {
-                    launch(command_clone.clone())?;
+                    launch(command_clone.clone()).expect("Failed to launch app");
                     query.set("".to_string());
                     window().set_visible(false);
                 },
