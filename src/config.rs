@@ -1,4 +1,5 @@
-use crate::{apps_json_path, update_apps_json_with_installed_apps};
+use crate::{apps_json_path, update_apps_json};
+use anyhow::Result;
 
 pub fn initialize_config() -> std::io::Result<()> {
     let path = apps_json_path();
@@ -15,7 +16,7 @@ pub fn initialize_config() -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn try_update_apps_json() -> Result<(), Box<dyn std::error::Error>> {
-    update_apps_json_with_installed_apps();
+pub fn try_update_apps_json() -> Result<()> {
+    update_apps_json();
     Ok(())
 }

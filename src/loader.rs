@@ -93,7 +93,7 @@ pub fn launch(app_name: String) -> Result<()> {
     }
 }
 
-pub fn update_apps_json_with_installed_apps() {
+pub fn update_apps_json() {
     let config_dir = config_path();
     let path = apps_json_path();
 

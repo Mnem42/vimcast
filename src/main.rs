@@ -6,11 +6,10 @@ mod window;
 
 use std::process::exit;
 use std::rc::Rc;
-
-
+use std::thread;
 //use crate::screenshot::take_screenshot;
 use crate::loader::launch;
-use crate::loader::{apps_json_path, update_apps_json_with_installed_apps};
+use crate::loader::{apps_json_path, update_apps_json};
 use crate::search::RadixNode;
 
 #[cfg(target_os = "macos")]
@@ -62,9 +61,8 @@ fn main() {
         eprintln!("⚠️ failed to initialize config: {e}");
     }
 
-    if let Err(e) = config::try_update_apps_json() {
-        eprintln!("⚠️ failed to update apps.json: {e}");
-    }
+    // Run it in its own thread
+    thread::spawn(config::try_update_apps_json());
 
     let event_loop = EventLoopBuilder::with_user_event().build();
 
