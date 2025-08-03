@@ -2,9 +2,10 @@ mod config;
 mod loader;
 mod search;
 mod os_specific;
+mod window;
 
 use std::process::exit;
-use std::rc::Rc;
+use anyhow::Result;
 
 
 //use crate::screenshot::take_screenshot;
@@ -26,6 +27,7 @@ use dioxus::desktop::tao::event_loop::EventLoopBuilder;
 use dioxus::logger::tracing::{info, Level};
 use dioxus::prelude::*;
 use image::Rgba;
+use crate::window::reposition_window;
 
 const MAIN_CSS: Asset = asset!("/assets/main.css");
 
@@ -36,7 +38,7 @@ fn init_window() -> WindowBuilder {
         .with_decorations(false)
         .with_background_color((0,0,0,0))
         .with_always_on_top(true)
-        .with_content_protection(true)
+        //.with_content_protection(true)
 }
 
 #[cfg(target_os = "macos")]
@@ -65,7 +67,7 @@ fn main() {
         eprintln!("⚠️ failed to update apps.json: {e}");
     }
 
-    let mut event_loop = EventLoopBuilder::with_user_event().build();
+    let event_loop = EventLoopBuilder::with_user_event().build();
 
     #[cfg(target_os = "macos")]
     event_loop.set_activation_policy(ActivationPolicy::Accessory);
@@ -82,23 +84,7 @@ fn main() {
 
     let main_window = window();
 
-
-    if let Some(monitor) = main_window.current_monitor() {
-        let monitor_size = monitor.size(); // LogicalSize
-        let monitor_position = monitor.position(); // LogicalPosition
-
-        let window_size = main_window.outer_size(); // PhysicalSize
-
-        // Convert everything to physical coordinates
-        let center_x = monitor_position.x
-            + ((monitor_size.width as f64 - window_size.width as f64) / 2.0) as i32;
-        let center_y = monitor_position.y
-            + ((monitor_size.height as f64 - window_size.height as f64) / 2.0) as i32;
-
-        main_window.set_outer_position(dioxus::desktop::tao::dpi::PhysicalPosition::new(
-            center_x, center_y,
-        ));
-    }
+    reposition_window(&main_window);
 }
 
 fn load_icon(bytes: &[u8]) -> Icon {
@@ -173,21 +159,7 @@ fn App() -> Element {
                 window.set_focus();
             }
 
-            if let Some(monitor) = window.current_monitor() {
-                let monitor_size = monitor.size();
-                let monitor_position = monitor.position();
-
-                let window_size = window.outer_size();
-
-                let center_x = monitor_position.x
-                    + ((monitor_size.width as f64 - window_size.width as f64) / 2.0) as i32;
-                let center_y = monitor_position.y
-                    + ((monitor_size.height as f64 - window_size.height as f64) / 2.0) as i32;
-
-                window.set_outer_position(dioxus::desktop::tao::dpi::PhysicalPosition::new(
-                    center_x, center_y,
-                ));
-            }
+            reposition_window(&window);
 
             window.set_visible(!is_visible);
         }
@@ -226,7 +198,7 @@ fn App() -> Element {
 }
 
 #[component]
-fn SResults(query: Signal<String>, db: RadixNode) -> Element {
+fn SResults(query: Signal<String>, db: RadixNode) -> Result<Element> {
     let searchresults = if db.starts_with(&query().trim()) && !query().is_empty() {
         db.collect(&query().to_lowercase().trim().trim_start())
     } else {
@@ -239,7 +211,7 @@ fn SResults(query: Signal<String>, db: RadixNode) -> Element {
             button {
                 autofocus: true,
                 onclick: move |_| {
-                    launch(command_clone.clone());
+                    launch(command_clone.clone())?;
                     query.set("".to_string());
                     window().set_visible(false);
                 },

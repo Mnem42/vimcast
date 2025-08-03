@@ -1,3 +1,4 @@
+use std::ffi::OsStr;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
@@ -49,24 +50,18 @@ pub(crate) fn  search_app_dirs() -> anyhow::Result<Vec<crate::loader::App>> {
         .map(|x| -> anyhow::Result<Option<crate::loader::App>> {
             let filename = x?.path();
 
-            if let Some(filename) = filename.to_str() {
-                if filename.ends_with(".lnk") {
-                    if let Some(resolved_path) = resolve_shortcut(filename)? {
-                        info!("Resolved path: {} File name: {}",resolved_path, filename);
-                        let resolved_path = fs::canonicalize(&resolved_path)?;
-
-                        Ok(Some(App::new(resolved_path, filename)))
-                    }
-                    else{
-                        Ok(None)
-                    }
+            if filename.extension().unwrap_or(OsStr::new("")) == "lnk" {
+                if let Some(resolved_path) = resolve_shortcut(filename.to_str().unwrap())? {
+                    let generated = App::new_from_osstr(&resolved_path, filename.file_name().unwrap());
+                    debug!("Resolved entry: {:#?} ",generated);
+                    Ok(Some(generated))
                 }
                 else{
                     Ok(None)
                 }
             }
             else{
-                Err(anyhow!("Error finding stuff"))
+                Ok(None)
             }
         })
         .map(|x| x.unwrap())
@@ -84,7 +79,7 @@ fn resolve_shortcut(path: &str) -> Result<Option<String>>{
 }
 
 #[cfg(target_os = "windows")]
-fn run_executable(path: PathBuf) -> Result<()>{
+pub(crate) fn run_executable(path: PathBuf) -> Result<()>{
     Command::new(path.to_str().unwrap())
         .spawn()?;
 
